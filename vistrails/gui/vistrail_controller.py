@@ -1349,7 +1349,11 @@ class VistrailController(QtCore.QObject, BaseController):
                         current_workflow = JobWorkflow(job_id)
                         self.jobMonitor.startWorkflow(current_workflow)
                     try:
-                        result = interpreter.execute(modifiedPipelines[pi], **kwargs)
+                        from vistrails.core.api import Pipeline as _Pipeline
+                        my_pipeline = _Pipeline(modifiedPipelines[pi])
+                        #result = interpreter.execute(modifiedPipelines[pi], **kwargs)
+                        result = my_pipeline.execute(is_iris = True, to_shuffle = False, index = 1)
+                        print('Score: ',result.output_port('score'))
                     finally:
                         self.jobMonitor.finishWorkflow()
 

@@ -49,7 +49,7 @@ class QParamExploreView(QParameterExplorationWidget, BaseView):
         QParameterExplorationWidget.__init__(self, parent)
         BaseView.__init__(self)
 
-        self.set_title("Explore")
+        self.set_title("Debug")
         self.connect(self.table,
                      QtCore.SIGNAL('exploreChange(bool)'),
                      self.exploreChange)
@@ -62,7 +62,7 @@ class QParamExploreView(QParameterExplorationWidget, BaseView):
         
     def updatePipeline(self, pipeline):
         name = self.controller.get_pipeline_name()
-        self.set_title("Explore: %s" % name)
+        self.set_title("Debug: %s" % name)
 
     def set_exploration(self, pe=None):
         if not pe:

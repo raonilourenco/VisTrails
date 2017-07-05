@@ -330,7 +330,7 @@ class Pipeline(object):
     _html = None
 
     def __init__(self, pipeline=None, vistrail=None):
-        initialize()
+        #initialize()
         if pipeline is None:
             self.pipeline = _Pipeline()
         elif isinstance(pipeline, _Pipeline):
