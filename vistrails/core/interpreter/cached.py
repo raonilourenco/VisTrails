@@ -487,7 +487,6 @@ class CachedInterpreter(vistrails.core.interpreter.base.BaseInterpreter):
 
         # Update **all** modules in the current pipeline
         for i, obj in tmp_id_to_module_map.iteritems():
-            print('Debugging',i,str(obj))
             obj.in_pipeline = True # set flag to indicate in pipeline
             obj.logging = logging_obj
             obj.change_parameter = make_change_parameter(obj)
@@ -632,7 +631,6 @@ class CachedInterpreter(vistrails.core.interpreter.base.BaseInterpreter):
             if not executed:
                 # these modules didn't execute
                 execs[tmp_id] = False
-            print('Raoni ------------------',errs, str(obj))
         return (to_delete, objs, errs, execs, suspends, caches, parameter_changes)
 
     def finalize_pipeline(self, pipeline, to_delete, objs, errs, execs,

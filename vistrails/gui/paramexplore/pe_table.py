@@ -175,6 +175,7 @@ class QParameterExplorationWidget(QtGui.QScrollArea):
         palette = self.get_palette()
         id_scope = self.controller.id_scope
         functions = []
+        param_dict = {}
         for i in xrange(self.table.layout().count()):
             pEditor = self.table.layout().itemAt(i).widget()
             if pEditor and isinstance(pEditor, QParameterSetEditor):
@@ -208,13 +209,16 @@ class QParameterExplorationWidget(QtGui.QScrollArea):
                                     interpolator=intType,
                                     value=value,
                                     dimension=paramWidget.getDimension())
+                    param_dict[value[0]] = value[2:]
                     function.addParameter(param)
                 functions.append(function)
+               
         pe = ParameterExploration(dims=str(self.table.label.getCounts()),
                       layout=repr(palette.virtual_cell.getConfiguration()[2]),
                       date=current_time(),
                       user=getuser(),
                       functions=functions)
+        
         return pe
 
     def setParameterExploration(self, pe, update_inspector=True):

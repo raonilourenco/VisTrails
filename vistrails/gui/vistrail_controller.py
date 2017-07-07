@@ -1249,15 +1249,18 @@ class VistrailController(QtCore.QObject, BaseController):
 
         if pe.action_id != self.current_version:
             self.change_selected_version(pe.action_id)
-        actions, pre_actions, vistrail_vars = \
+        actions, pre_actions, vistrail_vars,param_dict = \
                         pe.collectParameterActions(self.current_pipeline)
-
-        if self.current_pipeline and actions:
+	
+        if self.current_pipeline and param_dict:
+            from execute_workflow_cli_lists import run
+            from vistrails.core.api import Pipeline as _Pipeline
+            believed = run(_Pipeline(self.current_pipeline),param_dict)
+            print('believed: ', believed)
             pe_log_id = uuid.uuid1()
             explorer = ActionBasedParameterExploration()
             (pipelines, performedActions) = explorer.explore(
                 self.current_pipeline, actions, pre_actions)
-            
             dim = [max(1, len(a)) for a in actions]
             if use_spreadsheet:
                 from vistrails.gui.paramexplore.virtual_cell import positionPipelines, assembleThumbnails
@@ -1300,6 +1303,7 @@ class VistrailController(QtCore.QObject, BaseController):
                 images = {}
                 errors = []
                 for pi in xrange(len(modifiedPipelines)):
+                    
                     if showProgress:
                         self.progress.setValue(mCount[pi])
                         QtCore.QCoreApplication.processEvents()
@@ -1349,20 +1353,20 @@ class VistrailController(QtCore.QObject, BaseController):
                         current_workflow = JobWorkflow(job_id)
                         self.jobMonitor.startWorkflow(current_workflow)
                     try:
-                        from vistrails.core.api import Pipeline as _Pipeline
                         my_pipeline = _Pipeline(modifiedPipelines[pi])
                         #result = interpreter.execute(modifiedPipelines[pi], **kwargs)
                         result = my_pipeline.execute(is_iris = True, to_shuffle = False, index = 1)
                         print('Score: ',result.output_port('score'))
+                        
                     finally:
                         self.jobMonitor.finishWorkflow()
-
-                    for error in result.errors.itervalues():
+                    from vistrails.core.api import ExecutionErrors
+                    if isinstance(result,ExecutionErrors):
                         if use_spreadsheet:
                             pp = pipelinePositions[pi]
-                            errors.append(((pp[1], pp[0], pp[2]), error))
+                            errors.append(((pp[1], pp[0], pp[2]), result))
                         else:
-                            errors.append(((0,0,0), error))
+                            errors.append(((0,0,0), result))
 
             finally:
                 jobView.updating_now = False
