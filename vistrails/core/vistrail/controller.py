@@ -191,6 +191,9 @@ class VistrailController(object):
 
         # this is a reference to the current parameter exploration
         self.current_parameter_exploration = None
+
+        # this is a reference to the current debugging
+        self.current_debugging = None
         
         # theme used to estimate module size for layout
         self.layoutTheme = DefaultCoreTheme()

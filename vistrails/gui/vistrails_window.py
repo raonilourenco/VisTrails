@@ -68,6 +68,7 @@ from vistrails.gui.vistrail_variables import QVistrailVariables
 from vistrails.gui.vistrails_palette import QVistrailsPaletteInterface
 from vistrails.gui.modules.constant_configuration import ConstantWidgetMixin
 from vistrails.gui.paramexplore.pe_view import QParamExploreView
+from vistrails.gui.debugging.debug_view import QDebugView
 from vistrails.gui.mashups.alias_inspector import QAliasInspector
 from vistrails.gui.mashups.mashup_view import QMashupViewTab
 from vistrails.packages.spreadsheet.spreadsheet_cell import QCellWidget
@@ -415,7 +416,7 @@ class QVistrailViewWindow(QBaseViewWindow):
         self.view_action_group = QtGui.QActionGroup(self)
         for action in [self.qactions[n] 
                        for n in ['pipeline', 'history', 
-                                 'search', 'explore', 'provenance', 'mashup']]:
+                                 'search', 'explore', 'provenance', 'mashup', 'debug']]:
             self.toolbar.addAction(action)
             self.view_action_group.addAction(action)
         self.toolbar.addWidget(create_separator())
@@ -787,6 +788,13 @@ class QVistrailViewWindow(QBaseViewWindow):
                        'callback': \
                            _app.pass_through_bool(self.get_current_view,
                                                   'explore_change')}),
+                     ("debug", "Debug",
+                      {'icon': CurrentTheme.DEBUG_ICON,
+                       'checkable': True,
+                       'checked': False,
+                       'callback': \
+                           _app.pass_through_bool(self.get_current_view,
+                                                  'debug_change')}),
                      ("provenance", "Provenance",
                       {'icon': CurrentTheme.PROVENANCE_ICON,
                        'checkable': True,
@@ -1014,6 +1022,7 @@ class QVistrailsWindow(QVistrailViewWindow):
         from vistrails.gui.module_palette import QModulePalette
         from vistrails.gui.module_info import QModuleInfo
         from vistrails.gui.paramexplore.param_view import QParameterView
+        from vistrails.gui.debugging.param_view import QDebugParameterView
         from vistrails.gui.paramexplore.pe_inspector import QParamExploreInspector
         from vistrails.gui.shell import get_shell_dialog
         from vistrails.gui.version_prop import QVersionProp
@@ -1054,6 +1063,9 @@ class QVistrailsWindow(QVistrailViewWindow):
                 (('controller_changed', 'set_controller'),
                  ('module_changed', 'update_module'))),
                ((QParameterView, False),
+                (('pipeline_changed', 'set_pipeline'),
+                 ('controller_changed', 'set_controller'))),
+               ((QDebugParameterView, False),
                 (('pipeline_changed', 'set_pipeline'),
                  ('controller_changed', 'set_controller'))),
                ((QLogDetails, False),
@@ -2587,6 +2599,7 @@ class QVistrailsWindow(QVistrailViewWindow):
                                QAliasInspector,
                                QCellWidget,
                                QMashupViewTab,
+                               QDebugView,
                                QVistrailsPaletteInterface,
                                QToolWindow]
             old_view = self.get_current_view()

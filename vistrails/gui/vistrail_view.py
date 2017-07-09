@@ -60,6 +60,7 @@ from vistrails.gui.common_widgets import QMouseTabBar
 from vistrails.gui.mashups.mashup_view import QMashupView
 from vistrails.gui.module_info import QModuleInfo
 from vistrails.gui.paramexplore.pe_view import QParamExploreView
+from vistrails.gui.debugging.debug_view import QDebugView
 from vistrails.gui.pipeline_view import QPipelineView
 from vistrails.gui.ports_pane import ParameterEntry
 from vistrails.gui.query_view import QQueryView, QueryEntry,\
@@ -114,6 +115,7 @@ class QVistrailView(QtGui.QWidget):
         self.version_view = self.create_version_view()
         self.query_view = self.create_query_view()
         self.pe_view = self.create_pe_view()
+        self.debug_view = self.create_debug_view()
         self.log_view = self.create_log_view()
         self.mashup_view = self.create_mashup_view(False)
 
@@ -319,8 +321,26 @@ class QVistrailView(QtGui.QWidget):
         self.tab_state[self.tabs.currentIndex()] = window.qactions['explore']
         self.tab_to_view[self.tabs.currentIndex()] = self.get_current_tab()
 
+    def debug_selected(self):
+        from vistrails.gui.vistrails_window import _app
+        if hasattr(self.window(), 'qactions'):
+            window = self.window()
+        else:
+            window = _app
+        self.stack.setCurrentIndex(self.stack.indexOf(self.debug_view))
+        self.tabs.setTabText(self.tabs.currentIndex(),
+                             self.stack.currentWidget().get_title())
+        self.tab_state[self.tabs.currentIndex()] = window.qactions['debug']
+        self.tab_to_view[self.tabs.currentIndex()] = self.get_current_tab()
+
     def explore_unselected(self):
         #print "EXPLORE UN"
+        self.stack.setCurrentIndex(
+            self.tab_to_stack_idx[self.tabs.currentIndex()])
+        self.tabs.setTabText(self.tabs.currentIndex(), 
+                             self.stack.currentWidget().get_title())
+
+    def debug_unselected(self):
         self.stack.setCurrentIndex(
             self.tab_to_stack_idx[self.tabs.currentIndex()])
         self.tabs.setTabText(self.tabs.currentIndex(), 
@@ -400,6 +420,13 @@ class QVistrailView(QtGui.QWidget):
             self.explore_selected()
         else:
             self.explore_unselected()
+        self.view_changed()
+
+    def debug_change(self, checked):
+        if checked:
+            self.debug_selected()
+        else:
+            self.debug_unselected()
         self.view_changed()
 
     def provenance_change(self, checked):
@@ -797,6 +824,13 @@ class QVistrailView(QtGui.QWidget):
 
     def create_pe_view(self):
         view = self.create_view(QParamExploreView, False)
+        self.set_notification('controller_changed', view.set_controller)
+        self.set_notification('pipeline_changed', view.updatePipeline)
+        self.set_notification('exploration_changed', view.set_exploration)
+        return view
+
+    def create_debug_view(self):
+        view = self.create_view(QDebugView, False)
         self.set_notification('controller_changed', view.set_controller)
         self.set_notification('pipeline_changed', view.updatePipeline)
         self.set_notification('exploration_changed', view.set_exploration)
@@ -1213,6 +1247,18 @@ class QVistrailView(QtGui.QWidget):
         self.pe_view.setParameterExploration(pe)
         self.window().qactions['explore'].trigger()
 
+    def open_debugging(self, debug_id):
+        debugging = self.controller.vistrail.db_get_parameter_exploration_by_id(debug_id)
+        if not debugging:
+            return
+        if self.controller.current_version != debugging.action_id:
+            self.window().qactions['history'].trigger()
+            self.version_selected(debugging.action_id, True)
+            self.version_view.select_current_version()
+        self.controller.current_debugging = debugging
+        self.debug_view.setParameterExploration(debugging)
+        self.window().qactions['debug'].trigger()
+
     def apply_parameter_exploration(self, version, pe):
         if not pe:
             return
@@ -1226,6 +1272,20 @@ class QVistrailView(QtGui.QWidget):
         self.window().qactions['explore'].trigger()
         self.pe_view.setParameterExploration(pe, False)
         self.pe_view.table.setPipeline(self.controller.current_pipeline)
+
+    def apply_debugging(self, version, debugging):
+        if not debugging:
+            return
+        debugging = debugging.__copy__()
+        debugging.action_id = version
+        if self.controller.current_version != version:
+            self.window().qactions['history'].trigger()
+            self.version_selected(version, True)
+            self.version_view.select_current_version()
+        self.window().qactions['debug'].trigger()
+        self.debug_view.setParameterExploration(pe, False)
+        self.debug_view.table.setPipeline(self.controller.current_pipeline)
+
 
     ##########################################################################
     # Undo/redo

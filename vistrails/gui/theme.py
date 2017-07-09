@@ -375,6 +375,9 @@ class DefaultTheme(DefaultCoreTheme):
         self.EXECUTE_EXPLORE_ICON = QtGui.QIcon(
             vistrails.core.system.vistrails_root_directory() +
             '/gui/resources/images/execute_explore.png')
+        self.EXECUTE_DEBUG_ICON = QtGui.QIcon(
+            vistrails.core.system.vistrails_root_directory() +
+            '/gui/resources/images/execute_debug.png')
 
         # The undo icons for the vistrail view toolbar
         self.UNDO_ICON = QtGui.QIcon(
@@ -517,6 +520,9 @@ class DefaultTheme(DefaultCoreTheme):
         self.EXPLORE_ICON = QtGui.QIcon(
             vistrails.core.system.vistrails_root_directory() +
             '/gui/resources/images/explore.png')
+        self.DEBUG_ICON = QtGui.QIcon(
+            vistrails.core.system.vistrails_root_directory() +
+            '/gui/resources/images/debug.png')
         self.PROVENANCE_ICON = QtGui.QIcon(
             vistrails.core.system.vistrails_root_directory() +
             '/gui/resources/images/search_database.png')
