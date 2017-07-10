@@ -1248,7 +1248,7 @@ class QVistrailView(QtGui.QWidget):
         self.window().qactions['explore'].trigger()
 
     def open_debugging(self, debug_id):
-        debugging = self.controller.vistrail.db_get_parameter_exploration_by_id(debug_id)
+        debugging = self.controller.vistrail.db_get_debugging_by_id(debug_id)
         if not debugging:
             return
         if self.controller.current_version != debugging.action_id:

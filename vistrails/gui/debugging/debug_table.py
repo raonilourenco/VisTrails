@@ -376,8 +376,8 @@ class QDebugWidget(QtGui.QScrollArea):
         return QParamExploreInspector.instance()
     
     def get_param_view(self):
-        from vistrails.gui.paramexplore.param_view import QParameterView
-        return QParameterView.instance()
+        from vistrails.gui.debugging.param_view import QDebugParameterView
+        return QDebugParameterView.instance()
     
 class QParameterExplorationTable(QPromptWidget):
     """
