@@ -72,14 +72,13 @@ class ParameterInfo(InstanceObject):
 
 class QDebugParameterView(QtGui.QWidget, QVistrailsPaletteInterface):
     """
-    QParameterView contains the parameter exploration properties and the
+    QDebugParameterView contains the parameter exploration properties and the
     parameter palette
     
     """
     def __init__(self, controller=None, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.set_title('Pipeline Methods')
-        
         self.controller = None
         vLayout = QtGui.QVBoxLayout()
         vLayout.setMargin(0)
@@ -129,8 +128,8 @@ class QDebugParameterView(QtGui.QWidget, QVistrailsPaletteInterface):
         self.get_palette().set_pipeline(pipeline)
 
     def get_palette(self):
-        from vistrails.gui.paramexplore.pe_inspector import QParamExploreInspector
-        return QParamExploreInspector.instance()
+        from vistrails.gui.debugging.debug_inspector import QDebugInspector
+        return QDebugInspector.instance()
 
 class QParameterWidget(QSearchTreeWindow):
     """

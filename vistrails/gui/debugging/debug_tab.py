@@ -51,7 +51,7 @@ from vistrails.core import reportusage
 from vistrails.core.system import current_time, strftime
 from vistrails.gui.common_widgets import QDockContainer, QToolWindowInterface
 from vistrails.gui.debugging.debug_table import QDebugWidget, QParameterSetEditor
-from vistrails.gui.paramexplore.virtual_cell import QVirtualCellWindow
+from vistrails.gui.debugging.virtual_cell import QVirtualCellWindow
 from vistrails.gui.debugging.param_view import QDebugParameterView
 from vistrails.gui.paramexplore.pe_pipeline import QAnnotatedPipelineView
 
