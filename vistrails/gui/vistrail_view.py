@@ -322,6 +322,7 @@ class QVistrailView(QtGui.QWidget):
         self.tab_to_view[self.tabs.currentIndex()] = self.get_current_tab()
 
     def debug_selected(self):
+        print "DEBUG"
         from vistrails.gui.vistrails_window import _app
         if hasattr(self.window(), 'qactions'):
             window = self.window()
@@ -341,6 +342,7 @@ class QVistrailView(QtGui.QWidget):
                              self.stack.currentWidget().get_title())
 
     def debug_unselected(self):
+        print "DEBUG UN"
         self.stack.setCurrentIndex(
             self.tab_to_stack_idx[self.tabs.currentIndex()])
         self.tabs.setTabText(self.tabs.currentIndex(), 
@@ -423,6 +425,7 @@ class QVistrailView(QtGui.QWidget):
         self.view_changed()
 
     def debug_change(self, checked):
+        print('Raoni: called debug_changed')
         if checked:
             self.debug_selected()
         else:

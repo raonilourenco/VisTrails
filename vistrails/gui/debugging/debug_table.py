@@ -52,7 +52,7 @@ from vistrails.core.modules.basic_modules import Constant
 from vistrails.core.modules.module_registry import get_module_registry
 from vistrails.core.system import current_time, strftime
 from vistrails.core.paramexplore.param import PEParam
-from vistrails.core.paramexplore.function import PEFunction
+from vistrails.core.debugging.parameter import DebugParameter
 from vistrails.core.vistrail.module import Module as VistrailModule
 from vistrails.core.paramexplore.paramexplore import ParameterExploration
 import vistrails.core.db.action
@@ -124,44 +124,6 @@ class QDebugWidget(QtGui.QScrollArea):
         """
         self.table.setPipeline(pipeline)
 
-    def getParameterExplorationOld(self):
-        """ getParameterExploration() -> string
-        Generates an XML string that represents the current
-        parameter exploration, and which can be loaded with
-        setParameterExploration().
-        
-        """
-        # Construct xml for persisting parameter exploration
-        escape_dict = { "'":"&apos;", '"':'&quot;', '\n':'&#xa;' }
-        timestamp = strftime(current_time(), '%Y-%m-%d %H:%M:%S')
-        palette = self.get_palette()
-        # TODO: For now, we use the timestamp as the 'name' - Later, we should set 'name' based on a UI input field
-        xml = '\t<paramexp dims="%s" layout="%s" date="%s" name="%s">' % (str(self.table.label.getCounts()), str(palette.virtual_cell.getConfiguration()[2]), timestamp, timestamp)
-        for i in xrange(self.table.layout().count()):
-            pEditor = self.table.layout().itemAt(i).widget()
-            if pEditor and isinstance(pEditor, QParameterSetEditor):
-                firstParam = True
-                for paramWidget in pEditor.paramWidgets:
-                    paramInfo = paramWidget.param
-                    interpolator = paramWidget.editor.stackedEditors.currentWidget()
-                    intType = interpolator.exploration_name
-                    # Write function tag prior to the first parameter of the function
-                    if firstParam:
-                        xml += '\n\t\t<function id="%s" alias="%s" name="%s">' % (paramInfo.parent_id, paramInfo.is_alias, pEditor.info[0])
-                        firstParam = False
-                    # Write parameter tag
-                    xml += '\n\t\t\t<param id="%s" dim="%s" interp="%s"' % (paramInfo.id, paramWidget.getDimension(), intType)
-                    if intType in ['Linear Interpolation', 'RGB Interpolation',
-                                   'HSV Interpolation']:
-                        xml += ' min="%s" max="%s"' % (interpolator.fromEdit.get_value(), interpolator.toEdit.get_value())
-                    elif intType == 'List':
-                        xml += ' values="%s"' % escape(str(interpolator._str_values), escape_dict)
-                    elif intType == 'User-defined Function':
-                        xml += ' code="%s"' % escape(interpolator.function, escape_dict)
-                    xml += '/>'
-                xml += '\n\t\t</function>'
-        xml += '\n\t</paramexp>'
-        return xml
     
     def getParameterExploration(self):
         """ getParameterExploration() -> ParameterExploration
@@ -186,10 +148,10 @@ class QDebugWidget(QtGui.QScrollArea):
                     intType = interpolator.exploration_name
                     # Write function tag prior to the first parameter of the function
                     if firstParam:
-                        function = PEFunction(id=id_scope.getNewId(PEFunction.vtType),
+                        function = DebugParameter(id=id_scope.getNewId(DebugParameter.vtType),
                                               module_id=paramInfo.module_id,
                                               port_name=paramInfo.name,
-                                              is_alias = 1 if paramInfo.is_alias else 0)
+                                              is_alias = 1 if paramInfo.is_alias else 0, input_port_name = paramInfo.input_port_name)
                         firstParam = False
 
                     if intType in ['Linear Interpolation', 'RGB Interpolation',
@@ -294,83 +256,7 @@ class QDebugWidget(QtGui.QScrollArea):
                                 interpolator.function = '%s' % unescape(
                                                   str(p.value), unescape_dict)
 
-    def setParameterExplorationOld(self, xmlString):
-        """ setParameterExploration(xmlString: string) -> None
-        Sets the current parameter exploration to the one
-        defined by 'xmlString'.
-        
-        """
-        if not xmlString:
-            return
-        # Parse/validate the xml
-        try:
-            xmlDoc = parseString(xmlString).documentElement
-        except Exception, e:
-            debug.unexpected_exception(e)
-            debug.critical("Parameter Exploration load failed because of "
-                           "invalid XML:\n\n%s" % xmlString)
-            return
-        palette = self.get_palette()
-        paramView = self.get_param_view()
-        # Set the exploration dimensions
-        dims = literal_eval(xmlDoc.attributes['dims'].value)
-        self.table.label.setCounts(dims)
-        # Set the virtual cell layout
-        layout = literal_eval(xmlDoc.attributes['layout'].value)
-        palette.virtual_cell.setConfiguration(layout)
-        # Populate parameter exploration window with stored functions and aliases
-        for f in xmlDoc.getElementsByTagName('function'):
-            # Retrieve function attributes
-            f_id = long(f.attributes['id'].value)
-            f_is_alias = (str(f.attributes['alias'].value) == 'True')
-            # Search the parameter treeWidget for this function and add it directly
-            newEditor = None
-            for tidx in xrange(paramView.treeWidget.topLevelItemCount()):
-                moduleItem = paramView.treeWidget.topLevelItem(tidx)
-                for cidx in xrange(moduleItem.childCount()):
-                    paramInfo = moduleItem.child(cidx).parameter
-                    name, params = paramInfo
-                    if params[0].parent_id == f_id and params[0].is_alias == f_is_alias:
-                        newEditor = self.table.addParameter(paramInfo)
-            # Retrieve params for this function and set their values in the UI
-            if newEditor:
-                for p in f.getElementsByTagName('param'):
-                    # Locate the param in the newly added param editor and set values
-                    p_id = long(p.attributes['id'].value)
-                    for paramWidget in newEditor.paramWidgets:
-                        if paramWidget.param.id == p_id:
-                            # Set Parameter Dimension (radio button)
-                            p_dim = int(p.attributes['dim'].value)
-                            paramWidget.setDimension(p_dim)
-                            # Set Interpolator Type (dropdown list)
-                            p_intType = str(p.attributes['interp'].value)
-                            paramWidget.editor.selectInterpolator(p_intType)
-                            # Set Interpolator Value(s)
-                            interpolator = paramWidget.editor.stackedEditors.currentWidget()
-                            if p_intType in ['Linear Interpolation', 'RGB Interpolation',
-                                             'HSV Interpolation']:
-                                try:
-                                    # Set min/max
-                                    p_min = str(p.attributes['min'].value)
-                                    p_max = str(p.attributes['max'].value)
-                                    interpolator.fromEdit.set_value(p_min)
-                                    interpolator.toEdit.set_value(p_max)
-                                except Exception:
-                                    pass
-                            elif p_intType == 'List':
-                                p_values = str(p.attributes['values'].value)
-                                # Set internal list structure
-                                interpolator._str_values = literal_eval(p_values)
-                                # Update UI list
-                                if interpolator.type == 'String':
-                                    interpolator.listValues.setText(p_values)
-                                else:
-                                    interpolator.listValues.setText(p_values.replace("'", "").replace('"', ''))
-                            elif p_intType == 'User-defined Function':
-                                # Set function code
-                                p_code = str(p.attributes['code'].value)
-                                interpolator.function = p_code
-
+    
     def get_palette(self):
         from vistrails.gui.paramexplore.pe_inspector import QParamExploreInspector
         return QParamExploreInspector.instance()
@@ -464,7 +350,7 @@ class QParameterExplorationTable(QPromptWidget):
         self.layout().addWidget(newEditor)
         newEditor.show()
         self.setMinimumHeight(self.layout().minimumSize().height())
-        self.emit(QtCore.SIGNAL('exploreChange(bool)'), self.layout().count() > 3)
+        self.emit(QtCore.SIGNAL('debugChange(bool)'), self.layout().count() > 3)
         return newEditor
 
     def removeParameter(self, ps):
@@ -486,7 +372,7 @@ class QParameterExplorationTable(QPromptWidget):
                         widget.setEnabled(True)
                         break
         self.showPrompt(self.layout().count()<=3)
-        self.emit(QtCore.SIGNAL('exploreChange(bool)'), self.layout().count() > 3)
+        self.emit(QtCore.SIGNAL('debugChange(bool)'), self.layout().count() > 3)
 
     def updateWidgets(self):
         """ updateWidgets() -> None
@@ -522,7 +408,7 @@ class QParameterExplorationTable(QPromptWidget):
                 pEditor.deleteLater()
         self.label.resetCounts()
         self.showPrompt()
-        self.emit(QtCore.SIGNAL('exploreChange(bool)'), self.layout().count() > 3)
+        self.emit(QtCore.SIGNAL('debugChange(bool)'), self.layout().count() > 3)
 
     def setPipeline(self, pipeline):
         """ setPipeline(pipeline: Pipeline) -> None

@@ -52,7 +52,7 @@ class QDebugView(QDebugWidget, BaseView):
         self.set_title("Debug")
         self.connect(self.table,
                      QtCore.SIGNAL('debugChange(bool)'),
-                     self.exploreChange)
+                     self.debugChange)
 
     def set_controller(self, controller):
         if self.controller == controller:
@@ -101,7 +101,7 @@ class QDebugView(QDebugWidget, BaseView):
     def explore_non_empty(self, on):
         return on
     
-    def exploreChange(self, on):
+    def debugChange(self, on):
         from vistrails.gui.vistrails_window import _app
         _app.notify('debug_changed', on)
         

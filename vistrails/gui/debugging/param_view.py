@@ -78,15 +78,15 @@ class QDebugParameterView(QtGui.QWidget, QVistrailsPaletteInterface):
     """
     def __init__(self, controller=None, parent=None):
         QtGui.QWidget.__init__(self, parent)
-        self.set_title('Pipeline Methods')
+        self.set_title('Input Parameters')
         self.controller = None
         vLayout = QtGui.QVBoxLayout()
         vLayout.setMargin(0)
         vLayout.setSpacing(5)
         self.setLayout(vLayout)
 
-        self.toggleUnsetParameters = QtGui.QCheckBox('Show Unset Parameters')
-        vLayout.addWidget(self.toggleUnsetParameters, 0, QtCore.Qt.AlignRight)
+ #       self.toggleUnsetParameters = QtGui.QCheckBox('Show Unset Parameters')
+ #       vLayout.addWidget(self.toggleUnsetParameters, 0, QtCore.Qt.AlignRight)
 
         self.parameterWidget = QParameterWidget()
         vLayout.addWidget(self.parameterWidget)
@@ -100,8 +100,8 @@ class QDebugParameterView(QtGui.QWidget, QVistrailsPaletteInterface):
         vLayout.setStretch(1,1)
         vLayout.setStretch(2,0)
 
-        self.connect(self.toggleUnsetParameters, QtCore.SIGNAL("toggled(bool)"),
-                     self.parameterWidget.treeWidget.toggleUnsetParameters)
+  #      self.connect(self.toggleUnsetParameters, QtCore.SIGNAL("toggled(bool)"),
+  #                  self.parameterWidget.treeWidget.toggleUnsetParameters)
         self.set_controller(controller)
 
     def set_controller(self, controller):
@@ -261,7 +261,7 @@ class QParameterTreeWidget(QSearchTreeWidget):
                             moduleItem = QParameterTreeWidgetItem(None,
                                                                   self, mLabel)
                     v = ', '.join([p.strValue for p in function.params])
-                    label = ['%s(%s)' % (function.name, v)]
+                    label = [v]
                     
                     try:
                         port_spec = function.get_spec('input')
@@ -273,63 +273,22 @@ class QParameterTreeWidget(QSearchTreeWidget):
                     pList = [ParameterInfo(module_id=mId,
                                            name=function.name,
                                            pos=function.params[pId].pos,
-                                           value=function.params[pId].strValue,
+                                           value='',
                                            spec=port_spec_items[pId],
-                                           is_alias=False)
+                                           is_alias=False,
+                                           input_port_name=v)
                              for pId in xrange(len(function.params))]
                     mName = module.name
                     if moduleItem.parameter is not None:
                         mName += '(%d)' % moduleItem.parameter
-                    fName = '%s :: %s' % (mName, function.name)
+                    fName = '%s :: %s' % (mName, v)
                     QParameterTreeWidgetItem((fName, pList),
                                              moduleItem,
                                              label)
-            # Add available parameters
-            if module.is_valid:
-                for port_spec in module.destinationPorts():
-                    if (port_spec.name in function_names or
-                        not port_spec.is_valid or 
-                        not len(port_spec.port_spec_items) or
-                        not reg.is_constant(port_spec)):
-                        # The function already exists or is empty
-                        # or contains non-constant modules
-                        continue
-                    if moduleItem==None:
-                        if inspector.annotated_modules.has_key(mId):
-                            annotatedId = inspector.annotated_modules[mId]
-                            moduleItem = QParameterTreeWidgetItem(annotatedId,
-                                                                  self, 
-                                                                  mLabel, 
-                                                                  False)
-                        else:
-                            moduleItem = QParameterTreeWidgetItem(None, self,
-                                                                  mLabel, False)
-                    v = ', '.join([p.module for p in port_spec.port_spec_items])
-                    label = ['%s(%s)' % (port_spec.name, v)]
-                    pList = [ParameterInfo(module_id=mId,
-                                           name=port_spec.name,
-                                           pos=port_spec.port_spec_items[pId].pos,
-                                           value="",
-                                           spec=port_spec.port_spec_items[pId],
-                                           is_alias=False)
-                             for pId in xrange(len(port_spec.port_spec_items))]
-                    mName = module.name
-                    if moduleItem.parameter is not None:
-                        mName += '(%d)' % moduleItem.parameter
-                    fName = '%s :: %s' % (mName, port_spec.name)
-                    QParameterTreeWidgetItem((fName, pList),
-                                             moduleItem,
-                                             label, False)
+
             if moduleItem:
                 moduleItem.setExpanded(True)
-        self.toggleUnsetParameters(self.showUnsetParameters)
 
-    def toggleUnsetParameters(self, state):
-        self.showUnsetParameters = state
-        for item in self.findItems("*", QtCore.Qt.MatchWildcard | QtCore.Qt.MatchRecursive):
-            if not item.isSet:
-                item.setHidden(not state)
-            
 class QParameterTreeWidgetItemDelegate(QtGui.QItemDelegate):
     """    
     QParameterTreeWidgetItemDelegate will override the original
