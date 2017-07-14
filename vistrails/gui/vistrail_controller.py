@@ -1234,7 +1234,30 @@ class VistrailController(QtCore.QObject, BaseController):
         self.change_selected_version(action.id, from_root=True)
         self.flush_delayed_actions()
         self.invalidate_version_tree()
+
+    def executeDebugging(self, ds, view=None, extra_info={}, showProgress=True):
+        errors = []
+        reg = get_module_registry()
+        if ds.action_id != self.current_version:
+            self.change_selected_version(ds.action_id)
+        actions, pre_actions, vistrail_vars,param_dict = \
+                        ds.collectParameterActions(self.current_pipeline)
+        if self.current_pipeline and param_dict:
+            from execute_workflow_cli_lists import run
+            from vistrails.core.api import Pipeline as _Pipeline
+            print('Raoni:',str(param_dict))
+            believed = run(_Pipeline(self.current_pipeline),param_dict)
+            #ds.addBelieve(believed,param_dict.keys)
+            print 'Believe Decisive: ',str(believed)
         
+        if not(believed):
+            errors.append(((0,0,0), result))
+        
+        from vistrails.gui.vistrails_window import _app
+        _app.notify('execution_updated')
+        
+        return errors
+
     def executeParameterExploration(self, pe, view=None, extra_info={}, showProgress=True):
         """ execute(pe: ParameterExploration, view: QVistrailView,
             extra_info: dict, showProgress: bool) -> None
@@ -1252,11 +1275,7 @@ class VistrailController(QtCore.QObject, BaseController):
         actions, pre_actions, vistrail_vars,param_dict = \
                         pe.collectParameterActions(self.current_pipeline)
 	
-        if self.current_pipeline and param_dict:
-            from execute_workflow_cli_lists import run
-            from vistrails.core.api import Pipeline as _Pipeline
-            believed = run(_Pipeline(self.current_pipeline),param_dict)
-            print('believed: ', believed)
+        if self.current_pipeline:
             pe_log_id = uuid.uuid1()
             explorer = ActionBasedParameterExploration()
             (pipelines, performedActions) = explorer.explore(
@@ -1353,11 +1372,8 @@ class VistrailController(QtCore.QObject, BaseController):
                         current_workflow = JobWorkflow(job_id)
                         self.jobMonitor.startWorkflow(current_workflow)
                     try:
-                        my_pipeline = _Pipeline(modifiedPipelines[pi])
-                        #result = interpreter.execute(modifiedPipelines[pi], **kwargs)
-                        result = my_pipeline.execute(is_iris = True, to_shuffle = False, index = 1)
-                        print('Score: ',result.output_port('score'))
-                        
+                        result = interpreter.execute(modifiedPipelines[pi], **kwargs)
+                                                
                     finally:
                         self.jobMonitor.finishWorkflow()
                     from vistrails.core.api import ExecutionErrors

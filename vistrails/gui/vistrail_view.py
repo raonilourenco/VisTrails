@@ -425,7 +425,6 @@ class QVistrailView(QtGui.QWidget):
         self.view_changed()
 
     def debug_change(self, checked):
-        print('Raoni: called debug_changed')
         if checked:
             self.debug_selected()
         else:

@@ -127,11 +127,11 @@ class QDebugView(QDebugWidget, BaseView):
         else:
             pe = self.controller.current_debugging
 
-        errors = self.controller.executeParameterExploration(pe,
+        errors = self.controller.executeDebugging(pe,
                                      self.get_param_view().pipeline_view.scene())
         if errors:
             errors = '\n'.join(['Position %s: %s' % (error[0], error[1]) for error in errors])
             debug.critical("Debugging Execution had errors", errors)
         if changed:
             from vistrails.gui.vistrails_window import _app
-            _app.notify('debug_changed')
+            _app.notify('exploration_changed')

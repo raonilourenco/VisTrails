@@ -54,7 +54,7 @@ from vistrails.core.system import current_time, strftime
 from vistrails.core.paramexplore.param import PEParam
 from vistrails.core.debugging.parameter import DebugParameter
 from vistrails.core.vistrail.module import Module as VistrailModule
-from vistrails.core.paramexplore.paramexplore import ParameterExploration
+from vistrails.core.debugging.debugging import Debugging
 import vistrails.core.db.action
 
 """ The file describes the parameter exploration table for VisTrails
@@ -172,7 +172,7 @@ class QDebugWidget(QtGui.QScrollArea):
                                     dimension=paramWidget.getDimension())
                     function.addParameter(param)
                 functions.append(function)
-        pe = ParameterExploration(dims=str(self.table.label.getCounts()),
+        pe = Debugging(dims=str(self.table.label.getCounts()),
                       layout=repr(palette.virtual_cell.getConfiguration()[2]),
                       date=current_time(),
                       user=getuser(),
@@ -353,6 +353,10 @@ class QParameterExplorationTable(QPromptWidget):
         self.emit(QtCore.SIGNAL('debugChange(bool)'), self.layout().count() > 3)
         return newEditor
 
+    def addBelieve(self, believed,keys):
+        for belief in believed:
+            show_warning('Belief', 'The parameter %s leads to %s result if it takes the value %s' % (keys[belief[0]],belief[1],belief[2]))
+        
     def removeParameter(self, ps):
         """ removeParameterSet(ps: QParameterSetEditor) -> None
         Remove a parameter set from the table and validate the rest
