@@ -1247,6 +1247,8 @@ class VistrailController(QtCore.QObject, BaseController):
             from vistrails.core.api import Pipeline as _Pipeline
             print('Raoni:',str(param_dict))
             believed = run(_Pipeline(self.current_pipeline),param_dict)
+            for belief in believed:
+                show_warning('Belief', 'The parameter %s leads to %s result if it takes the value %s' % (param_dict.keys()[belief[0]],belief[1],belief[2]))
             #ds.addBelieve(believed,param_dict.keys)
             print 'Believe Decisive: ',str(believed)
         
