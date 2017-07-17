@@ -40,7 +40,7 @@ from __future__ import division
 from PyQt4 import QtCore, QtGui
 from vistrails.core.inspector import PipelineInspector
 from vistrails.gui.common_widgets import QToolWindowInterface
-from vistrails.gui.paramexplore.pe_pipeline import QAnnotatedPipelineView
+from vistrails.gui.debugging.debug_pipeline import QAnnotatedPipelineView
 from vistrails.gui.theme import CurrentTheme
 import copy
 import os.path

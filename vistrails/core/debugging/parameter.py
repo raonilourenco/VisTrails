@@ -40,7 +40,7 @@
 from __future__ import division
 
 from vistrails.db.domain import DBPEFunction, DBPEParameter
-from vistrails.core.paramexplore.param import PEParam
+from vistrails.core.debugging.param import PEParam
 import copy
 
 import unittest

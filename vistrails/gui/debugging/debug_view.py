@@ -70,10 +70,10 @@ class QDebugView(QDebugWidget, BaseView):
         self.setParameterExploration(pe)
 
     def set_default_layout(self):
-        from vistrails.gui.paramexplore.pe_inspector import QParamExploreInspector
+        from vistrails.gui.debugging.debug_inspector import QDebugInspector
         from vistrails.gui.debugging.param_view import QDebugParameterView
         self.set_palette_layout(
-            {QtCore.Qt.LeftDockWidgetArea: QParamExploreInspector,
+            {QtCore.Qt.LeftDockWidgetArea: QDebugInspector,
              QtCore.Qt.RightDockWidgetArea: QDebugParameterView,
              })
             

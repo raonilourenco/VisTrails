@@ -1,5 +1,22 @@
-from vistrails.core.modules.module_registry import get_module_registry
 
+from itertools import izip
+
+from vistrails.core.modules.module_registry import get_module_registry
+from vistrails.core.vistrail.controller import VistrailController
+from vistrails.core.vistrail.pipeline import Pipeline as _Pipeline
+from vistrails.core.vistrail.vistrail import Vistrail as _Vistrail
+from vistrails.core.system import get_vistrails_basic_pkg_id
+from vistrails.db.domain import IdScope
+from vistrails.core.modules.sub_module import get_port_spec_info
+from vistrails.core.modules.utils import parse_port_spec_string
+from vistrails.core.interpreter.default import get_default_interpreter
+
+
+__all__ = ['Vistrail', 'Pipeline', 'Module', 'Package',
+           'ExecutionResults', 'ExecutionErrors', 'Function',
+           'ipython_mode', 'load_vistrail', 'load_pipeline', 'load_package',
+           'output_mode', 'run_vistrail',
+           'NoSuchVersion', 'NoSuchPackage']
 
 class Pipeline(object):
     """This class represents a single Pipeline.
@@ -327,3 +344,120 @@ class Pipeline(object):
                 pass
             self._html += '<pre>' + cgi.escape(repr(self)) + '</pre>'
         return self._html
+
+def get_inputoutput_name(module):
+    for function in module.functions:
+        if function.name == 'name':
+            if len(function.params) == 1:
+                return function.params[0].strValue
+    return None
+
+
+class ExecutionErrors(Exception):
+    """Errors raised during a pipeline execution.
+    """
+    def __init__(self, pipeline, resultobj):
+        self.pipeline = pipeline
+        self._errors = resultobj.errors
+
+    def __str__(self):
+        return "Pipeline execution failed: %d error%s:\n%s" % (
+                len(self._errors),
+                's' if len(self._errors) >= 2 else '',
+                '\n'.join('%d: %s' % p for p in self._errors.iteritems()))
+
+
+class ExecutionResults(object):
+    """Contains the results of a pipeline execution.
+    """
+    def __init__(self, pipeline, resultobj):
+        self.pipeline = pipeline
+        self._objects = resultobj.objects
+
+    def output_port(self, output):
+        """Gets the value passed to an OutputPort module with that name.
+        """
+        if isinstance(output, basestring):
+            outputs = self.pipeline._get_inputs_or_outputs('OutputPort')
+            module_id = outputs[output].id
+        else:
+            raise TypeError("output_port() expects a string, not %r" %
+                            type(output).__name__)
+        return self._objects[module_id].get_output('ExternalPipe')
+
+    def module_output(self, module):
+        """Gets all the output ports of a specified module.
+        """
+        if not isinstance(module, Module):
+            module = self.pipeline.get_module(module)
+        return self._objects[module.module_id].outputPorts
+
+    def __repr__(self):
+        return "<ExecutionResult: %d modules>" % len(self._objects)
+
+
+class Module(object):
+    """Wrapper for a module, which can be in a Pipeline or not yet.
+    """
+    module_id = None
+    pipeline = None
+
+    def __init__(self, descriptor, **kwargs):
+        self.descriptor = descriptor
+        if 'module_id' and 'pipeline' in kwargs:
+            self.module_id = kwargs.pop('module_id')
+            self.pipeline = kwargs.pop('pipeline')
+            if not (isinstance(self.module_id, (int, long)) and
+                    isinstance(self.pipeline, Pipeline)):
+                raise TypeError
+        elif 'module_id' in kwargs or 'pipeline' in kwargs:
+            raise TypeError("Module was given an id but no pipeline")
+
+        if kwargs:
+            raise TypeError("Module was given unexpected argument: %r" %
+                            next(iter(kwargs)))
+
+    @property
+    def module(self):
+        if self.module_id is None:
+            raise ValueError("This module is not part of a pipeline")
+        return self.pipeline.pipeline.modules[self.module_id]
+
+    @property
+    def module_class(self):
+        return ModuleClass(self.descriptor)
+
+    @property
+    def name(self):
+        if self.module_id is None:
+            raise ValueError("This module is not part of a pipeline")
+        mod = self.pipeline.pipeline.modules[self.module_id]
+        if '__desc__' in mod.db_annotations_key_index:
+            return mod.get_annotation_by_key('__desc__').value
+        else:
+            return None
+
+    def __repr__(self):
+        desc = "<Module %r from %s" % (self.descriptor.name,
+                                       self.descriptor.identifier)
+        if self.module_id is not None:
+            desc += ", id %d" % self.module_id
+            if self.pipeline is not None:
+                mod = self.pipeline.pipeline.modules[self.module_id]
+                if '__desc__' in mod.db_annotations_key_index:
+                    desc += (", name \"%s\"" %
+                             mod.get_annotation_by_key('__desc__').value)
+        return desc + ">"
+
+    def __eq__(self, other):
+        if isinstance(other, Module):
+            if self.module_id is None:
+                return other.module_id is None
+            else:
+                if other.module_id is None:
+                    return False
+                return (self.module_id == other.module_id and
+                        self.pipeline == other.pipeline)
+        else:
+            return ModuleValuePair(self.module, other)
+

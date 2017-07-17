@@ -1243,8 +1243,8 @@ class VistrailController(QtCore.QObject, BaseController):
         actions, pre_actions, vistrail_vars,param_dict = \
                         ds.collectParameterActions(self.current_pipeline)
         if self.current_pipeline and param_dict:
-            from execute_workflow_cli_lists import run
-            from vistrails.core.api import Pipeline as _Pipeline
+            from vistrails.core.debugging.autodebug_lists import run
+            from vistrails.core.debugging.pipeline import Pipeline as _Pipeline
             print('Raoni:',str(param_dict))
             believed = run(_Pipeline(self.current_pipeline),param_dict)
             for belief in believed:

@@ -44,14 +44,14 @@ from xml.sax.saxutils import escape, unescape
 from vistrails.core.vistrail.module_param import ModuleParam
 from vistrails.gui.theme import CurrentTheme
 from vistrails.gui.common_widgets import QPromptWidget
-from vistrails.gui.modules.paramexplore import QParameterEditor
+from vistrails.gui.modules.autodebug import QParameterEditor
 from vistrails.gui.debugging.param_view import QParameterTreeWidget
 from vistrails.gui.utils import show_warning
 from vistrails.core import debug
 from vistrails.core.modules.basic_modules import Constant
 from vistrails.core.modules.module_registry import get_module_registry
 from vistrails.core.system import current_time, strftime
-from vistrails.core.paramexplore.param import PEParam
+from vistrails.core.debugging.param import PEParam
 from vistrails.core.debugging.parameter import DebugParameter
 from vistrails.core.vistrail.module import Module as VistrailModule
 from vistrails.core.debugging.debugging import Debugging
@@ -258,8 +258,8 @@ class QDebugWidget(QtGui.QScrollArea):
 
     
     def get_palette(self):
-        from vistrails.gui.paramexplore.pe_inspector import QParamExploreInspector
-        return QParamExploreInspector.instance()
+        from vistrails.gui.debugging.debug_inspector import QDebugInspector
+        return QDebugInspector.instance()
     
     def get_param_view(self):
         from vistrails.gui.debugging.param_view import QDebugParameterView

@@ -46,7 +46,7 @@ from vistrails.core.debugging.parameter import DebugParameter
 from vistrails.core.vistrail.module_function import ModuleFunction
 from vistrails.core.vistrail.module_param import ModuleParam
 from vistrails.core.vistrail.module import Module
-from vistrails.core.modules.paramexplore import IntegerLinearInterpolator, \
+from vistrails.core.modules.autodebug import IntegerLinearInterpolator, \
    FloatLinearInterpolator, RGBColorInterpolator, HSVColorInterpolator,\
    UserDefinedFunctionInterpolator
 
