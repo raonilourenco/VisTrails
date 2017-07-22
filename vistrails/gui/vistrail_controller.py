@@ -1274,7 +1274,7 @@ class VistrailController(QtCore.QObject, BaseController):
 
         if pe.action_id != self.current_version:
             self.change_selected_version(pe.action_id)
-        actions, pre_actions, vistrail_vars,param_dict = \
+        actions, pre_actions, vistrail_vars = \
                         pe.collectParameterActions(self.current_pipeline)
 	
         if self.current_pipeline:
@@ -1378,13 +1378,13 @@ class VistrailController(QtCore.QObject, BaseController):
                                                 
                     finally:
                         self.jobMonitor.finishWorkflow()
-                    from vistrails.core.api import ExecutionErrors
-                    if isinstance(result,ExecutionErrors):
+
+                    for error in result.errors.itervalues():
                         if use_spreadsheet:
                             pp = pipelinePositions[pi]
-                            errors.append(((pp[1], pp[0], pp[2]), result))
+                            errors.append(((pp[1], pp[0], pp[2]), error))
                         else:
-                            errors.append(((0,0,0), result))
+                            errors.append(((0,0,0), error))
 
             finally:
                 jobView.updating_now = False

@@ -47,7 +47,6 @@ from vistrails.gui.paramexplore.pe_pipeline import QAnnotatedPipelineView
 from vistrails.gui.vistrails_palette import QVistrailsPaletteInterface
 from vistrails.core.utils import InstanceObject
 from vistrails.core.debug import debug
-from vistrails.core.api import Pipeline
 
 ################################################################################
 
@@ -271,8 +270,6 @@ class QParameterTreeWidget(QSearchTreeWidget):
                 for fId in xrange(len(module.functions)):
                     function = module.functions[fId]
                     function_names[function.name] = function
-                    desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic','InputPort')
-                    if not(module.module_descriptor is desc): continue
                     if len(function.params)==0: continue
                     if moduleItem==None:
                         if inspector.annotated_modules.has_key(mId):

@@ -157,7 +157,7 @@ def assembletests(testindex, moralflag, val, alllists):
            # use experiments as long as labels so far are unambiguous
            allexperiments.append(e)
            x = copy.deepcopy(e)
-           x.append(evaluate(e, formula))
+           x[-1] = eval(e[-1])
            allrets.append(x[-1])
            allresults.append(x)
    print("allrets are: "+str(allrets)+" # "+str(len(set(allrets))))
@@ -194,7 +194,7 @@ def run(pipeline, input_dict):
 
   for e in allexperiments:
       x = copy.deepcopy(e)
-      x.append(evaluate(e, formula))
+      x[-1] = eval(e[-1])
       allresults.append(x)
 
 
@@ -206,7 +206,7 @@ def run(pipeline, input_dict):
 
   print("allresults is: "+str(allresults))
   # Initially we prefer indices with few distinct values and less impure  
-  expers = [allresults[j][:-2] for j in range(len(allresults))]
+  expers = [allresults[j][:-1] for j in range(len(allresults))]
   print("expers is: "+str(expers))
   rets = [allresults[j][-1] for j in range(len(allresults))]
   print("rets is: "+str(rets))
@@ -233,7 +233,7 @@ def run(pipeline, input_dict):
       print("length of all experiments is: "+str(len(allexperiments)))
       
       if not (i == indices[-1]):
-          expers = [allresults[j][:-2] for j in range(len(allresults))]
+          expers = [allresults[j][:-1] for j in range(len(allresults))]
           print("expers is: "+str(expers))
           rets = [allresults[j][-1] for j in range(len(allresults))]
           print("rets is: "+str(rets))
@@ -263,7 +263,6 @@ def run_workflow(parameter_list):
 
 allexperiments = []
 allresults = []
-formula = '(local[3]>\'0.5\')'
 cost = '1'
 cols = []
 believeddecisive = []

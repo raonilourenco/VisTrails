@@ -232,7 +232,6 @@ class Debugging(DBParameterExploration):
                 old_param = parameter
                 actions = []
                 param_dict[pe_function.input_port_name] = values
-                print('Raoni',pe_function.input_port_name)
                 for v in values:
                     desc = port_spec_item.descriptor
                     if not isinstance(v, str):
@@ -248,8 +247,10 @@ class Debugging(DBParameterExploration):
                     tmp_p_id -= 1
                     action_spec = ('change', old_param, new_param,
                                    function.vtType, function.real_id)
+                    print('Raoni actions: ',str(old_param),str(new_param))
                     action = vistrails.core.db.action.create_action([action_spec])
                     actions.append(action)
+
                 parameterValues[dim].append(actions)
         return [zip(*p) for p in parameterValues], function_actions, vistrail_vars,param_dict
 

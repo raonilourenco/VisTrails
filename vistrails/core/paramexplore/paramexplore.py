@@ -144,7 +144,6 @@ class ParameterExploration(DBParameterExploration):
         function_actions = []
         tmp_f_id = -1L
         tmp_p_id = -1L
-        param_dict = {}
         for i in xrange(len(self.functions)):
             pe_function = self.functions[i]
             module = pipeline.db_get_object(Module.vtType, pe_function.module_id)
@@ -231,7 +230,6 @@ class ParameterExploration(DBParameterExploration):
                 # find old parameter
                 old_param = parameter
                 actions = []
-                param_dict[values[0]] = values[1:]
                 for v in values:
                     desc = port_spec_item.descriptor
                     if not isinstance(v, str):
@@ -250,7 +248,7 @@ class ParameterExploration(DBParameterExploration):
                     action = vistrails.core.db.action.create_action([action_spec])
                     actions.append(action)
                 parameterValues[dim].append(actions)
-        return [zip(*p) for p in parameterValues], function_actions, vistrail_vars,param_dict
+        return [zip(*p) for p in parameterValues], function_actions, vistrail_vars
 
     def __eq__(self, other):
         """ __eq__(other: ParameterExploration) -> boolean

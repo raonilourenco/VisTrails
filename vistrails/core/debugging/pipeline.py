@@ -108,7 +108,8 @@ class Pipeline(object):
                 raise ValueError("Multiple values set for InputPort %r" %
                                  get_inputoutput_name(key.module))
             inputs[key.module_id] = value
-
+        
+                
         reason = "API pipeline execution"
         sinks = sinks or None
 
@@ -161,6 +162,7 @@ class Pipeline(object):
                         # Create the constant module
                         constant_desc = reg.get_descriptor_by_name(
                                 *sigstrings[0])
+                        #print('Setting desription: ',str(constant_desc),str(sigstrings[0]))
                         constant_mod = create_module(id_scope, constant_desc)
                         func = create_function(id_scope, constant_mod,
                                                'value', values)
@@ -175,6 +177,22 @@ class Pipeline(object):
                     else:
                         raise RuntimeError("TODO : create tuple")
 
+                # Create the constant module
+                '''module = pipeline.modules[moduleid]
+                constant_desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic', 'String', None)
+                print('Setting desription: ',str(constant_desc),str(sigstrings[0]))
+                constant_mod = create_module(id_scope, constant_desc)
+                func = create_function(id_scope, constant_mod,
+                                   'value', ['mudei'])
+                constant_mod.add_function(func)
+                pipeline.add_module(constant_mod)
+
+                        # Connect it to the ExternalPipe port
+                conn = create_connection(id_scope,
+                                        constant_mod, 'value',
+                                        module, 'ExternalPipe')
+                pipeline.db_add_connection(conn)
+'''
             interpreter = get_default_interpreter()
             result = interpreter.execute(pipeline,
                                          reason=reason,
@@ -224,6 +242,24 @@ class Pipeline(object):
                 if name is not None:
                     modules[name] = module
         return modules
+
+    def get_python_parameter(self,parameter_name):
+        try:
+            reg = get_module_registry()
+            desc = reg.get_descriptor_by_name(
+                    'org.vistrails.vistrails.basic',
+                    'PythonSource')
+            for module in self.pipeline.modules.itervalues():
+                if module.module_descriptor is desc:
+                    for function in module.functions:
+                        if function.name == parameter_name:
+                            return [function,module.id]
+        except KeyError:
+            raise KeyError("No PythonSource  module with name %r" % name)
+        else:
+            return Module(descriptor=module.module_descriptor,
+                          module_id=module.id,
+                          pipeline=self)
 
     def get_input(self, name):
         try:
