@@ -7,6 +7,9 @@ from vistrails.core.vistrail.pipeline import Pipeline as _Pipeline
 from vistrails.core.vistrail.vistrail import Vistrail as _Vistrail
 from vistrails.core.system import get_vistrails_basic_pkg_id
 from vistrails.db.domain import IdScope
+import vistrails.core.db.action
+from vistrails.core.vistrail.module_function import ModuleFunction
+from vistrails.core.vistrail.module_param import ModuleParam
 from vistrails.core.modules.sub_module import get_port_spec_info
 from vistrails.core.modules.utils import parse_port_spec_string
 from vistrails.core.interpreter.default import get_default_interpreter
@@ -21,16 +24,18 @@ __all__ = ['Vistrail', 'Pipeline', 'Module', 'Package',
 class Pipeline(object):
     """This class represents a single Pipeline.
 
-    It doesn't have a controller.
+    It now does have a controller.
     """
     vistrail = None
     version = None
     _inputs = None
     _outputs = None
     _html = None
+    controller = None
 
-    def __init__(self, pipeline=None, vistrail=None):
-        
+    def __init__(self, controller=None, vistrail=None):
+        self.controller = controller
+        pipeline = controller.current_pipeline
         if pipeline is None:
             self.pipeline = _Pipeline()
         elif isinstance(pipeline, _Pipeline):
@@ -78,6 +83,7 @@ class Pipeline(object):
                             input_url == 'http://www.vistrails.org/',
                             resolution=15)  # kwarg: only one equal sign
         """
+        pipeline = self.pipeline
         sinks = set()
         inputs = {}
 
@@ -103,13 +109,15 @@ class Pipeline(object):
 
         # Read kwargs
         for key, value in kwargs.iteritems():
-            key = self.get_input(key)  # Might raise KeyError
-            if key.module_id in inputs:
-                raise ValueError("Multiple values set for InputPort %r" %
-                                 get_inputoutput_name(key.module))
-            inputs[key.module_id] = value
+            name = key
+            key = self.get_python_parameter(key)  # Might raise KeyError
+            if name in inputs:
+                raise ValueError("Multiple values set for input %r" %
+                                 name)
+            inputs[name] = [key.module_id,value]
+            print('Raoni inputs: ',name,value,key.module_id)
+
         
-                
         reason = "API pipeline execution"
         sinks = sinks or None
 
@@ -130,25 +138,27 @@ class Pipeline(object):
                     ]])
             result, = results
         else:
-            pipeline = self.pipeline
+            #pipeline = self.pipeline
             if inputs:
-                id_scope = IdScope(1)
-                pipeline = pipeline.do_copy(False, id_scope)
+                #id_scope = IdScope(1)
+                #pipeline = pipeline.do_copy(False, id_scope)
 
                 # A hach to get ids from id_scope that we know won't collide:
                 # make them negative
-                id_scope.getNewId = lambda t, g=id_scope.getNewId: -g(t)
+                #id_scope.getNewId = lambda t, g=id_scope.getNewId: -g(t)
 
-                create_module = \
-                        VistrailController.create_module_from_descriptor_static
-                create_function = VistrailController.create_function_static
-                create_connection = VistrailController.create_connection_static
+                #create_module = \
+                 #       VistrailController.create_module_from_descriptor_static
+                #create_function = VistrailController.create_function_static
+                #create_connection = VistrailController.create_connection_static
                 # Fills in the ExternalPipe ports
-                for module_id, values in inputs.iteritems():
+                
+                for name,  input_list in inputs.iteritems():
+                    module_id, values = input_list
                     module = pipeline.modules[module_id]
                     if not isinstance(values, (list, tuple)):
                         values = [values]
-
+                    '''
                     # Guess the type of the InputPort
                     _, sigstrings, _, _, _ = get_port_spec_info(pipeline, module)
                     sigstrings = parse_port_spec_string(sigstrings)
@@ -177,26 +187,70 @@ class Pipeline(object):
                     else:
                         raise RuntimeError("TODO : create tuple")
 
-                # Create the constant module
-                '''module = pipeline.modules[moduleid]
-                constant_desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic', 'String', None)
-                print('Setting desription: ',str(constant_desc),str(sigstrings[0]))
-                constant_mod = create_module(id_scope, constant_desc)
-                func = create_function(id_scope, constant_mod,
-                                   'value', ['mudei'])
-                constant_mod.add_function(func)
-                pipeline.add_module(constant_mod)
+                    '''
+                    port_spec = reg.get_input_port_spec(module, name)
+                    added_functions = {}
+                    tmp_f_id = -1L
+                    tmp_p_id = -1L
+                    function = [f for f in module.functions
+                                    if f.name == port_spec.name]
+                    if function:
+                        function = function[0]
+                    else:
+                        try:
+                            function = added_functions[(module.id,port_spec.name)]
+                        except KeyError:
+                            # add to function list
+                            params = []
+                            for psi in port_spec.port_spec_items:
+                                parameter = ModuleParam(id=tmp_p_id,
+                                            pos=psi.pos,
+                                            name='<no description>',
+                                            val=psi.default,
+                                            type=psi.descriptor.sigstring) 
+                                params.append(parameter)
+                                tmp_p_id -= 1
+                            function = ModuleFunction(id=tmp_f_id,
+                                                      pos=module.getNumFunctions(),
+                                                      name=port_spec.name,
+                                                      parameters=params)
+                            tmp_f_id -= 1
+                            added_functions[(module.id, port_spec.name)]=function 
+                            action = vistrails.core.db.action.create_action([('add',
+                                                                    function,
+                                                                    module.vtType,
+                                                                    module.id)])
+                            #function_actions.append(action)
+                    parameter = function.params[0]
+                    # find old parameter
+                    old_param = parameter
+                    actions = []
+                
+                    for v in values:
+                        desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic', 'String', None)
+                        if not isinstance(v, str):
+                            str_value = desc.module.translate_to_string(v)
+                        else:
+                            str_value = v
+                        new_param = ModuleParam(id=tmp_p_id,
+                                                pos=old_param.pos,
+                                                name=old_param.name,
+                                                alias=old_param.alias,
+                                                val=str_value,
+                                                type=old_param.type)
+                        tmp_p_id -= 1
+                        action_spec = ('change', old_param, new_param,
+                                       function.vtType, function.real_id)
+                        action = vistrails.core.db.action.create_action([action_spec])
+                        actions.append(action)
+                        #controller = self.vistrail.controller
+                        self.controller.perform_action(action)
+    #########################################################################
 
-                        # Connect it to the ExternalPipe port
-                conn = create_connection(id_scope,
-                                        constant_mod, 'value',
-                                        module, 'ExternalPipe')
-                pipeline.db_add_connection(conn)
-'''
             interpreter = get_default_interpreter()
             result = interpreter.execute(pipeline,
                                          reason=reason,
-                                         sinks=sinks)
+                                         sinks=sinks,actions = actions)
 
         if result.errors:
             raise ExecutionErrors(self, result)
@@ -251,15 +305,16 @@ class Pipeline(object):
                     'PythonSource')
             for module in self.pipeline.modules.itervalues():
                 if module.module_descriptor is desc:
-                    for function in module.functions:
+                    print('Raoni python source',str(module))
+                    for function in module.input_port_specs:
+                        print('Raoni checking ports',str(function))
                         if function.name == parameter_name:
-                            return [function,module.id]
+                            return Module(descriptor=module.module_descriptor,
+                                          module_id=module.id,
+                                          pipeline=self)
         except KeyError:
             raise KeyError("No PythonSource  module with name %r" % name)
-        else:
-            return Module(descriptor=module.module_descriptor,
-                          module_id=module.id,
-                          pipeline=self)
+        
 
     def get_input(self, name):
         try:

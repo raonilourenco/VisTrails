@@ -178,7 +178,7 @@ def run(pipeline, input_dict):
   global my_outputs
   global my_pipeline 
   my_pipeline = pipeline
-  my_inputs = pipeline.inputs
+  my_inputs = input_dict.keys()
   my_outputs = pipeline.outputs
   for i in range(8):
       exp = []

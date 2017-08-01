@@ -249,8 +249,8 @@ class QParameterTreeWidget(QSearchTreeWidget):
                 for fId in xrange(len(module.functions)):
                     function = module.functions[fId]
                     function_names[function.name] = function
-                    desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic','InputPort')
-                    if not(module.module_descriptor is desc): continue
+                    desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic','OutputPort')
+                    if module.module_descriptor is desc: continue
                     if len(function.params)==0: continue
                     if moduleItem==None:
                         if inspector.annotated_modules.has_key(mId):
@@ -261,7 +261,7 @@ class QParameterTreeWidget(QSearchTreeWidget):
                             moduleItem = QParameterTreeWidgetItem(None,
                                                                   self, mLabel)
                     v = ', '.join([p.strValue for p in function.params])
-                    label = [v]
+                    label = [function.name]
                     
                     try:
                         port_spec = function.get_spec('input')
@@ -273,7 +273,7 @@ class QParameterTreeWidget(QSearchTreeWidget):
                     pList = [ParameterInfo(module_id=mId,
                                            name=function.name,
                                            pos=function.params[pId].pos,
-                                           value='',
+                                           value=v,
                                            spec=port_spec_items[pId],
                                            is_alias=False,
                                            input_port_name=v)
@@ -281,7 +281,7 @@ class QParameterTreeWidget(QSearchTreeWidget):
                     mName = module.name
                     if moduleItem.parameter is not None:
                         mName += '(%d)' % moduleItem.parameter
-                    fName = '%s :: %s' % (mName, v)
+                    fName = '%s :: %s' % (mName, function.name)
                     QParameterTreeWidgetItem((fName, pList),
                                              moduleItem,
                                              label)

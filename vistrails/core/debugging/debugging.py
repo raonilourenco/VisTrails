@@ -231,7 +231,7 @@ class Debugging(DBParameterExploration):
                 # find old parameter
                 old_param = parameter
                 actions = []
-                param_dict[pe_function.input_port_name] = values
+                param_dict[pe_function.port_name] = values
                 for v in values:
                     desc = port_spec_item.descriptor
                     if not isinstance(v, str):
