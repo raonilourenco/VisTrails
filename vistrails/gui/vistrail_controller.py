@@ -1243,10 +1243,11 @@ class VistrailController(QtCore.QObject, BaseController):
         actions, pre_actions, vistrail_vars,param_dict = \
                         ds.collectParameterActions(self.current_pipeline)
         if self.current_pipeline and param_dict:
-            from vistrails.core.debugging.autodebug_lists import run
+            from vistrails.core.debugging.autodebug_lists import AutoDebug
             from vistrails.core.debugging.pipeline import Pipeline as _Pipeline
             print('Raoni:',str(param_dict))
-            believed = run(_Pipeline(self),param_dict)
+            auto_debug = AutoDebug()
+            believed = auto_debug.run(_Pipeline(self),param_dict)
             for belief in believed:
                 show_warning('Belief', 'The parameter %s leads to %s result if it takes the value %s' % (param_dict.keys()[belief[0]],belief[1],belief[2]))
             #ds.addBelieve(believed,param_dict.keys)
