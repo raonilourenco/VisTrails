@@ -216,6 +216,7 @@ class AutoDebug(object):
     pairs = [(len(tup[0])+len(tup[1])+len(tup[2]),len(tup[2])) for tup in translist]
     tuples= sorted(enumerate(pairs), key = lambda x: x[1])
     indices = [t[0] for t in tuples]
+    newindices = indices
 
     manufacture = True
     while manufacture:

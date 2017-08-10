@@ -1240,7 +1240,7 @@ class VistrailController(QtCore.QObject, BaseController):
         reg = get_module_registry()
         if ds.action_id != self.current_version:
             self.change_selected_version(ds.action_id)
-        actions, pre_actions, vistrail_vars,param_dict = \
+        pre_actions, vistrail_vars,param_dict = \
                         ds.collectParameterActions(self.current_pipeline)
         if self.current_pipeline and param_dict:
             from vistrails.core.debugging.autodebug_lists import AutoDebug

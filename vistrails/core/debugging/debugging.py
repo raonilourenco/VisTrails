@@ -154,13 +154,10 @@ class Debugging(DBParameterExploration):
             port_spec = reg.get_input_port_spec(module, pe_function.port_name)
             for param in pe_function.parameters:
                 port_spec_item = port_spec.port_spec_items[param.pos]
-                dim = param.dimension
-                if dim not in [0, 1, 2, 3]:
-                    continue
-                count = self.dims[dim]
                 # find interpolator values
                 values = []
                 text = '%s' % unescape(param.value, unescape_dict)
+                count = 0
                 if param.interpolator == 'Linear Interpolation':
                     # need to figure out type
                     if port_spec_item.module == "Integer":
@@ -251,8 +248,8 @@ class Debugging(DBParameterExploration):
                     action = vistrails.core.db.action.create_action([action_spec])
                     actions.append(action)
 
-                parameterValues[dim].append(actions)
-        return [zip(*p) for p in parameterValues], function_actions, vistrail_vars,param_dict
+                
+        return function_actions, vistrail_vars,param_dict
 
     def __eq__(self, other):
         """ __eq__(other: ParameterExploration) -> boolean

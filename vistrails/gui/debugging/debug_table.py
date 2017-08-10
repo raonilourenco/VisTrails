@@ -168,12 +168,10 @@ class QDebugWidget(QtGui.QScrollArea):
                     param = PEParam(id=id_scope.getNewId(PEParam.vtType),
                                     pos=paramInfo.pos,
                                     interpolator=intType,
-                                    value=value,
-                                    dimension=paramWidget.getDimension())
+                                    value=value)
                     function.addParameter(param)
                 functions.append(function)
-        pe = Debugging(dims=str(self.table.label.getCounts()),
-                      layout=repr(palette.virtual_cell.getConfiguration()[2]),
+        pe = Debugging(layout=repr(palette.virtual_cell.getConfiguration()[2]),
                       date=current_time(),
                       user=getuser(),
                       functions=functions)
@@ -192,8 +190,7 @@ class QDebugWidget(QtGui.QScrollArea):
             return
         unescape_dict = { "&apos;":"'", '&quot;':'"', '&#xa;':'\n' }
         paramView = self.get_param_view()
-        # Set the exploration dimensions
-        self.table.label.setCounts(pe.dims)
+    
         # Set the virtual cell layout
         palette.virtual_cell.setConfiguration(pe.layout)
         # Populate parameter exploration window with stored functions and aliases
@@ -219,8 +216,6 @@ class QDebugWidget(QtGui.QScrollArea):
                     # Locate the param in the newly added param editor and set values
                     for paramWidget in newEditor.paramWidgets:
                         if paramWidget.param.pos == p.pos:
-                            # Set Parameter Dimension (radio button)
-                            paramWidget.setDimension(p.dimension)
                             # Set Interpolator Type (dropdown list)
                             paramWidget.editor.selectInterpolator(p.interpolator)
                             # Set Interpolator Value(s)
@@ -297,13 +292,6 @@ class QParameterExplorationTable(QPromptWidget):
         vLayout.setAlignment(QtCore.Qt.AlignTop)
         self.setLayout(vLayout)
 
-        self.label = QDimensionLabel()
-
-        for labelIcon in self.label.labelIcons:
-            self.connect(labelIcon.countWidget,
-                         QtCore.SIGNAL('editingFinished()'),
-                         self.updateWidgets)
-        vLayout.addWidget(self.label)
 
         for i in xrange(2):
             hBar = QtGui.QFrame()
@@ -342,7 +330,6 @@ class QParameterExplorationTable(QPromptWidget):
                 if pEditor and isinstance(pEditor, QParameterSetEditor):
                     if params[p] in pEditor.info[1]:
                         widget = newEditor.paramWidgets[p]
-                        widget.setDimension(4)
                         widget.setDuplicate(True)
                         widget.setEnabled(False)
                         break
@@ -371,32 +358,12 @@ class QParameterExplorationTable(QPromptWidget):
                     param = pEditor.info[1][p]
                     widget = pEditor.paramWidgets[p]                    
                     if param in ps.info[1] and not widget.isEnabled():
-                        widget.setDimension(0)
                         widget.setDuplicate(False)
                         widget.setEnabled(True)
                         break
         self.showPrompt(self.layout().count()<=3)
         self.emit(QtCore.SIGNAL('debugChange(bool)'), self.layout().count() > 3)
 
-    def updateWidgets(self):
-        """ updateWidgets() -> None
-        Update all widgets to reflect the step count
-        
-        """
-        # Go through all possible parameter widgets
-        counts = self.label.getCounts()
-        for wdg in xrange(self.layout().count()):
-            pEditor = self.layout().itemAt(wdg).widget()
-            if pEditor and isinstance(pEditor, QParameterSetEditor):
-                for paramWidget in pEditor.paramWidgets:
-                    dim = paramWidget.getDimension()
-                    if dim in [0, 1, 2, 3]:
-                        stackedEditors = paramWidget.editor.stackedEditors
-                        # Notifies editor widgets of size update 
-                        for edit in xrange(stackedEditors.count()):
-                            wd = stackedEditors.widget(edit)
-                            if hasattr(wd, 'size_was_updated'):
-                                wd.size_was_updated(counts[dim])
 
     def clear(self):
         """ clear() -> None
@@ -410,7 +377,6 @@ class QParameterExplorationTable(QPromptWidget):
                 self.layout().removeWidget(pEditor)
                 pEditor.hide()
                 pEditor.deleteLater()
-        self.label.resetCounts()
         self.showPrompt()
         self.emit(QtCore.SIGNAL('debugChange(bool)'), self.layout().count() > 3)
 
@@ -435,231 +401,8 @@ class QParameterExplorationTable(QPromptWidget):
         else:
             self.clear()
         self.pipeline = pipeline
-        self.label.setEnabled(self.pipeline is not None)
 
-    def collectParameterActions(self):
-        """ collectParameterActions() -> list
-        Return a list of action lists corresponding to each dimension
-        
-        """
-        if not self.pipeline:
-            return None
-
-        reg = get_module_registry()
-        parameterValues = [[], [], [], []]
-        counts = self.label.getCounts()
-        for i in xrange(self.layout().count()):
-            pEditor = self.layout().itemAt(i).widget()
-            if pEditor and isinstance(pEditor, QParameterSetEditor):
-                for paramWidget in pEditor.paramWidgets:
-                    editor = paramWidget.editor
-                    interpolator = editor.stackedEditors.currentWidget()
-                    paramInfo = paramWidget.param
-                    dim = paramWidget.getDimension()
-                    if dim in [0, 1, 2, 3]:
-                        count = counts[dim]
-                        values = interpolator.get_values(count)
-                        if not values:
-                            return None
-                        pId = paramInfo.id
-                        pType = paramInfo.dbtype
-                        parentType = paramInfo.parent_dbtype
-                        parentId = paramInfo.parent_id
-                        function = self.pipeline.db_get_object(parentType,
-                                                               parentId)
-                        old_param = self.pipeline.db_get_object(pType,pId)
-                        pName = old_param.name
-                        pAlias = old_param.alias
-                        pIdentifier = old_param.identifier
-                        actions = []
-                        tmp_id = -1L
-                        for v in values:
-                            getter = reg.get_descriptor_by_name
-                            desc = getter(paramInfo.identifier,
-                                          paramInfo.type,
-                                          paramInfo.namespace)
-                            if not isinstance(v, str):
-                                str_value = desc.module.translate_to_string(v)
-                            else:
-                                str_value = v
-                            new_param = ModuleParam(id=tmp_id,
-                                                    pos=old_param.pos,
-                                                    name=pName,
-                                                    alias=pAlias,
-                                                    val=str_value,
-                                                    type=paramInfo.type,
-                                                    identifier=pIdentifier
-                                                    )
-                            action_spec = ('change', old_param, new_param,
-                                           parentType, function.real_id)
-                            action = vistrails.core.db.action.create_action([action_spec])
-                            actions.append(action)
-                        parameterValues[dim].append(actions)
-                        tmp_id -= 1
-        return [zip(*p) for p in parameterValues]
-
-class QDimensionLabel(QtGui.QWidget):
-    """
-    QDimensionLabel represents a horizontal header item of the
-    parameter window. It has 4 small icons represents the dimensions
-    and a Skip label. It represents a group box.
     
-    """
-    def __init__(self, parent=None):
-        """ QDimensionLabel(parent: QWidget) -> None
-        Initialize icons and labels
-        
-        """
-        QtGui.QWidget.__init__(self, parent)
-        self.setAutoFillBackground(True)
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding,
-                           QtGui.QSizePolicy.Maximum)
-
-        hLayout = QtGui.QHBoxLayout(self)
-        hLayout.setMargin(0)
-        hLayout.setSpacing(0)
-        self.setLayout(hLayout)        
-
-        self.params = QDimensionLabelText('Parameters')
-        hLayout.addWidget(self.params)
-        self.params.setSizePolicy(QtGui.QSizePolicy.Expanding,
-                                  QtGui.QSizePolicy.Expanding)
-        hLayout.addWidget(QDimensionLabelSeparator())
-        
-        pixes = [CurrentTheme.EXPLORE_COLUMN_PIXMAP,
-                 CurrentTheme.EXPLORE_ROW_PIXMAP,
-                 CurrentTheme.EXPLORE_SHEET_PIXMAP,
-                 CurrentTheme.EXPLORE_TIME_PIXMAP]
-        self.labelIcons = []
-        for pix in pixes:
-            labelIcon = QDimensionLabelIcon(pix)
-            hLayout.addWidget(labelIcon)
-            self.labelIcons.append(labelIcon)            
-            hLayout.addWidget(QDimensionLabelSeparator())
-
-        hLayout.addWidget(QDimensionLabelIcon(CurrentTheme.EXPLORE_SKIP_PIXMAP,
-                                              False))
-
-    def getCounts(self):
-        """ getCounts() -> [int]        
-        Return a list of 4 ints denoting the step count desired for
-        each dimension
-        
-        """
-        return [l.countWidget.value() for l in self.labelIcons]
-
-    def setCounts(self, counts):
-        """ setCounts(counts:list) -> None
-        Set the 4 step counts for each dimension from a list of 4 ints
-
-        """
-        dim = len(self.getCounts())
-        if len(counts) != dim:
-            return
-        for i in xrange(0, dim):
-            self.labelIcons[i].countWidget.setValue(counts[i])
-
-    def resetCounts(self):
-        """ resetCounts() -> None
-        Reset all counts to 1
-        
-        """
-        for l in self.labelIcons:
-            l.countWidget.setValue(1)
-    
-class QDimensionSpinBox(QtGui.QSpinBox):
-    """
-    QDimensionSpinBox is just an overrided spin box that will also emit
-    'editingFinished()' signal when the user interact with mouse
-    
-    """    
-    def mouseReleaseEvent(self, event):
-        """ mouseReleaseEvent(event: QMouseEvent) -> None
-        Emit 'editingFinished()' signal when the user release a mouse button
-        
-        """
-        QtGui.QSpinBox.mouseReleaseEvent(self, event)
-        # super(QDimensionSpinBox, self).mouseReleaseEvent(event)
-        self.emit(QtCore.SIGNAL("editingFinished()"))
-
-class QDimensionLabelIcon(QtGui.QWidget):
-    """
-    QDimensionLabelIcon describes those icons staying on the header
-    view of the table
-    
-    """
-    def __init__(self, pix, hasCount = True, parent=None):
-        """ QDimensionalLabelIcon(pix: QPixmap, hasCount: bool, parent: QWidget)
-                                  -> QDimensionalLabelIcon
-        Using size 32x32 and a margin of 2
-        
-        """
-        QtGui.QWidget.__init__(self, parent)
-        layout = QtGui.QVBoxLayout()
-        layout.setMargin(0)
-        layout.setSpacing(0)
-        self.setLayout(layout)
-
-        label = QtGui.QLabel()
-        label.setAlignment(QtCore.Qt.AlignCenter)
-        label.setPixmap(pix.scaled(32, 32, QtCore.Qt.KeepAspectRatio,
-                                  QtCore.Qt.SmoothTransformation))
-        layout.addWidget(label)
-
-        if hasCount:
-            self.countWidget = QDimensionSpinBox()
-            self.countWidget.setFixedWidth(32)
-            self.countWidget.setRange(1, 10000000)
-            self.countWidget.setAlignment(QtCore.Qt.AlignRight)
-            self.countWidget.setFrame(False)
-            pal = QtGui.QPalette(self.countWidget.lineEdit().palette())
-            pal.setBrush(QtGui.QPalette.Base,
-                         QtGui.QBrush(QtCore.Qt.NoBrush))
-            self.countWidget.lineEdit().setPalette(pal)
-            layout.addWidget(self.countWidget)
-            
-        self.setSizePolicy(QtGui.QSizePolicy.Maximum,
-                            QtGui.QSizePolicy.Maximum)        
-                
-class QDimensionLabelText(QtGui.QWidget):
-    """
-    QDimensionLabelText describes those texts staying on the header
-    view of the table. It also has a button to perform exploration
-    
-    """
-    def __init__(self, text, parent=None):
-        """ QDimensionalLabelText(text: str, parent: QWidget)
-                                   -> QDimensionalLabelText
-        Putting the text bold in the center
-        
-        """
-        QtGui.QWidget.__init__(self, parent)
-        hLayout = QtGui.QHBoxLayout()
-        self.setLayout(hLayout)
-
-        hLayout.addStretch()
-        
-        hLayout.addWidget(QtGui.QLabel('<b>Parameters</b>'))
-
-        hLayout.addStretch()
-        
-        
-class QDimensionLabelSeparator(QtGui.QFrame):
-    """
-    QDimensionLabelSeparator is acting as a vertical separator which
-    has an appropriate style to go with the QDimensionalLabel
-    
-    """
-    def __init__(self, parent=None):
-        """ QDimensionalLabelSeparator(parent: QWidget)
-                                       -> QDimensionalLabelSeparator
-        Make sure the frame only has a width of 2
-        
-        """
-        QtGui.QFrame.__init__(self, parent)
-        self.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Sunken)
-        self.setFixedWidth(2)
-
 class QParameterSetEditor(QtGui.QWidget):
     """
     QParameterSetEditor is a widget controlling a set of
@@ -680,10 +423,7 @@ class QParameterSetEditor(QtGui.QWidget):
         self.info = info
         self.table = table
         (name, paramList) = info
-        if table:
-            size = table.label.getCounts()[0]
-        else:
-            size = 1
+        size = 1
         
         vLayout = QtGui.QVBoxLayout(self)
         vLayout.setMargin(0)
@@ -787,12 +527,14 @@ class QParameterWidget(QtGui.QWidget):
         self.editor = QParameterEditor(param, size)
         hLayout.addWidget(self.editor)
 
+        '''
         self.selector = QDimensionSelector()
         self.connect(self.selector.radioButtons[4],
                      QtCore.SIGNAL('toggled(bool)'),
                      self.disableParameter)
         hLayout.addWidget(self.selector)
-
+        '''
+    '''
     def getDimension(self):
         """ getDimension() -> int        
         Return a number 0-4 indicating which radio button is
@@ -804,7 +546,7 @@ class QParameterWidget(QtGui.QWidget):
             if self.selector.radioButtons[i].isChecked():
                 return i
         return -1
-
+    '''
     def disableParameter(self, disabled=True):
         """ disableParameter(disabled: bool) -> None
         Disable/Enable this parameter when disabled is True/False
@@ -813,6 +555,8 @@ class QParameterWidget(QtGui.QWidget):
         self.label.setEnabled(not disabled)
         self.editor.setEnabled(not disabled)
 
+
+    '''
     def setDimension(self, dim):
         """ setDimension(dim: int) -> None
         Select a dimension for this parameter
@@ -820,6 +564,7 @@ class QParameterWidget(QtGui.QWidget):
         """
         if dim in xrange(5):
             self.selector.radioButtons[dim].setChecked(True)
+    '''
 
     def setDuplicate(self, duplicate):
         """ setDuplicate(duplicate: True) -> None
@@ -832,6 +577,9 @@ class QParameterWidget(QtGui.QWidget):
         else:
             self.editor.stackedEditors.setCurrentIndex(self.prevWidget)
 
+
+
+'''
 class QDimensionSelector(QtGui.QWidget):
     """
     QDimensionSelector provides 5 radio buttons to select dimension of
@@ -861,7 +609,8 @@ class QDimensionSelector(QtGui.QWidget):
             button.setFixedWidth(32)
             hLayout.addWidget(button)
         self.radioButtons[0].setChecked(True)
-
+'''
+'''
 class QDimensionRadioButton(QtGui.QRadioButton):
     """
     QDimensionRadioButton is a replacement of QRadioButton with
@@ -896,3 +645,4 @@ class QDimensionRadioButton(QtGui.QRadioButton):
         
         """
         self.click()
+'''

@@ -251,6 +251,8 @@ class QParameterTreeWidget(QSearchTreeWidget):
                     function_names[function.name] = function
                     desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic','OutputPort')
                     if module.module_descriptor is desc: continue
+                    desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic','PythonSource')
+                    if (module.module_descriptor is desc) and (function.name == 'source'): continue
                     if len(function.params)==0: continue
                     if moduleItem==None:
                         if inspector.annotated_modules.has_key(mId):
