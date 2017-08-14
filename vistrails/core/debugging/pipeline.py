@@ -115,7 +115,7 @@ class Pipeline(object):
                 raise ValueError("Multiple values set for input %r" %
                                  name)
             inputs[name] = [key.module_id,value]
-            print('Raoni inputs: ',name,value,key.module_id)
+            
 
         
         reason = "API pipeline execution"
@@ -305,9 +305,7 @@ class Pipeline(object):
                     'PythonSource')
             for module in self.pipeline.modules.itervalues():
                 if module.module_descriptor is desc:
-                    print('Raoni python source',str(module))
                     for function in module.input_port_specs:
-                        print('Raoni checking ports',str(function))
                         if function.name == parameter_name:
                             return Module(descriptor=module.module_descriptor,
                                           module_id=module.id,

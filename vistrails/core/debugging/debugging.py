@@ -244,7 +244,6 @@ class Debugging(DBParameterExploration):
                     tmp_p_id -= 1
                     action_spec = ('change', old_param, new_param,
                                    function.vtType, function.real_id)
-                    print('Raoni actions: ',str(old_param),str(new_param))
                     action = vistrails.core.db.action.create_action([action_spec])
                     actions.append(action)
 
