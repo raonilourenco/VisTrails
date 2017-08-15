@@ -185,9 +185,12 @@ class AutoDebug(object):
             value = random.choice(input_dict[param])
             exp.append(value)
             my_kwargs[param] = value
-        result = self.my_pipeline.execute(**my_kwargs)
-        for output in self.my_outputs:
+        try:
+          result = self.my_pipeline.execute(**my_kwargs)
+          for output in self.my_outputs:
             exp.append(str(result.output_port(output)))
+        except:
+          exp.append(str(False))
         self.allexperiments.append(exp)
 
     for e in self.allexperiments:
