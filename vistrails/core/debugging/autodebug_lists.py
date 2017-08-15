@@ -258,9 +258,12 @@ class AutoDebug(object):
   def workflow(self, parameter_list):
     for i in range(len(parameter_list)):
         self.my_kwargs[self.my_inputs[i]] = parameter_list[i]
-    result = self.my_pipeline.execute(**self.my_kwargs)
-    for output in self.my_outputs:
+    try:
+      result = self.my_pipeline.execute(**my_kwargs)
+      for output in self.my_outputs:
         parameter_list.append(str(result.output_port(output)))
+    except:
+      parameter_list.append(str(False))
     return parameter_list
   
   def __init__(self):
