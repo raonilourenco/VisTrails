@@ -178,7 +178,10 @@ class AutoDebug(object):
     self.my_pipeline = pipeline
     self.my_inputs = input_dict.keys()
     self.my_outputs = pipeline.outputs
-    for i in range(8):
+    num_initial_tests = 1
+    for param in self.my_inputs:
+      num_initial_tests *= len(input_dict[param])
+    for i in range(num_initial_tests/10):
         exp = []
         my_kwargs = {}
         for param in self.my_inputs:
