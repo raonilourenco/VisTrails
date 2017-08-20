@@ -95,6 +95,29 @@ class ExecutionProgressDialog(QtGui.QProgressDialog):
         self.show()
         super(ExecutionProgressDialog, self).setValue(self._last_set_value)
 
+
+class AutoDebugProgressDialog(QtGui.QProgressDialog):
+    def __init__(self, parent=None):
+        QtGui.QProgressDialog.__init__(self, 'Auto Debugging Workflow',
+                                       '&Cancel',
+                                       0, 100,
+                                       parent, QtCore.Qt.Dialog)
+        self.setWindowTitle('Debugging')
+        self.setWindowModality(QtCore.Qt.WindowModal)
+        self._last_set_value = 0
+        self._progress_canceled = False
+        # if suspended is true we should not wait for a job to complete
+        self.suspended = False
+
+    def setValue(self, value):
+        self._last_set_value = value
+        super(AutoDebugProgressDialog, self).setValue(value)
+
+    def goOn(self):
+        self.reset()
+        self.show()
+        super(AutoDebugProgressDialog, self).setValue(self._last_set_value)
+
 class PEProgressDialog(QtGui.QProgressDialog):
     def __init__(self, parent=None, total_progress=100):
         QtGui.QProgressDialog.__init__(self,
@@ -1245,13 +1268,21 @@ class VistrailController(QtCore.QObject, BaseController):
         if self.current_pipeline and param_dict:
             from vistrails.core.debugging.autodebug_lists import AutoDebug
             from vistrails.core.debugging.pipeline import Pipeline as _Pipeline
-            print('Raoni:',str(param_dict))
-            auto_debug = AutoDebug()
-            believed = auto_debug.run(_Pipeline(self),param_dict)
-            for belief in believed:
-                show_warning('Belief', 'The parameter %s leads to %s result if it takes the value %s' % (param_dict.keys()[belief[0]],belief[1],belief[2]))
-            #ds.addBelieve(believed,param_dict.keys)
-            print 'Believe Decisive: ',str(believed)
+            try:
+                self.progress = AutoDebugProgressDialog(self.vistrail_view)
+                self.progress.show()
+                auto_debug = AutoDebug()
+                believed = auto_debug.run(_Pipeline(self),param_dict)
+                self.progress.setValue(100)    
+            finally:
+                self.progress.hide()
+                self.progress.deleteLater()
+                self.progress = None
+                for belief in believed:
+                    show_warning('Belief', 'The parameter %s leads to %s result if it takes the value %s' % (param_dict.keys()[belief[0]],belief[1],belief[2]))
+                #ds.addBelieve(believed,param_dict.keys)
+                print 'Believe Decisive: ',str(believed)
+                
         
         from vistrails.gui.vistrails_window import _app
         _app.notify('execution_updated')
