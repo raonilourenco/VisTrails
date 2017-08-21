@@ -181,7 +181,7 @@ class AutoDebug(object):
     num_initial_tests = 1
     for param in self.my_inputs:
       num_initial_tests *= len(input_dict[param])
-    for i in range(num_initial_tests/10):
+    for i in range(max(10,num_initial_tests/10)):
         exp = []
         my_kwargs = {}
         for param in self.my_inputs:
