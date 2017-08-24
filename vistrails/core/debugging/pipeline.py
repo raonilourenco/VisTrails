@@ -248,6 +248,7 @@ class Pipeline(object):
     #########################################################################
 
             interpreter = get_default_interpreter()
+            self.controller.progress.setLabelText('Auto Debugging Executing \nParemeters: ' + str(kwargs))
             result = interpreter.execute(pipeline,
                                          reason=reason,
                                          sinks=sinks,actions = actions)
