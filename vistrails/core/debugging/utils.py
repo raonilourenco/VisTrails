@@ -2,6 +2,9 @@ import copy
 import sys, os
 import random
 import logging
+from vistrails.core.vistrail.controller import VistrailController as BaseController
+from vistrails.core.modules.module_registry import get_module_registry
+import json
 
 goodbad = [True, False]
 numtests = 10
@@ -46,3 +49,30 @@ def loadtests(filename):
 		allresults.append(x)
 
 	return [workflow,allexperiments,allresults,formula,cost,cols]
+
+def record_run(moduleInfo,result):
+	paramDict = {}
+	vistrail_name = moduleInfo['locator'].name
+	file_name = vistrail_name.replace('.vt','.adb')
+	f = open(file_name,"a")
+	reg = get_module_registry()
+	pipeline = moduleInfo['controller'].current_pipeline
+	sortedModules = sorted(pipeline.modules.iteritems(),
+	                       key=lambda item: item[1].name)
+	for mId, module in sortedModules:
+	    if len(module.functions)>0:
+	        for fId in xrange(len(module.functions)):
+	            function = module.functions[fId]
+	            desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic','OutputPort')
+	            if module.module_descriptor is desc: continue
+	            desc = reg.get_descriptor_by_name('org.vistrails.vistrails.basic','PythonSource')
+	            if (module.module_descriptor is desc) and (function.name == 'source'): continue
+	            if len(function.params)==0: continue
+	            v = ', '.join([p.strValue for p in function.params])
+	            paramDict[function.name] = str(v)
+	            
+	            
+
+	paramDict['result'] = str(result)              
+	f.write(json.dumps(paramDict)+ '\n')
+	f.close()
