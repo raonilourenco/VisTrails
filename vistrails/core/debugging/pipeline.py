@@ -254,6 +254,7 @@ class Pipeline(object):
                                          sinks=sinks,actions = actions)
 
         if result.errors:
+            print('Error:', str(result.errors))
             raise ExecutionErrors(self, result)
         else:
             return ExecutionResults(self, result)

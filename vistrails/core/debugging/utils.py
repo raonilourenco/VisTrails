@@ -50,6 +50,30 @@ def loadtests(filename):
 
 	return [workflow,allexperiments,allresults,formula,cost,cols]
 
+def load_runs(filename, input_keys):
+	print('calling load run',filename)
+	fileicareabout = open(filename,"r")
+	alllines = fileicareabout.readlines()
+	fileicareabout.close()
+
+	allexperiments = []
+	allresults = [] # experiments and their results
+
+	for e in alllines:
+		exp = []
+		exp_dict = json.loads(e[:-1])
+		for key in input_keys:
+			exp.append(exp_dict[key].encode("utf-8"))
+		exp.append(exp_dict['result'].encode("utf-8"))
+		allexperiments.append(exp)
+  		
+  	for e in allexperiments:
+		x = copy.deepcopy(e)
+		x[-1] = eval(x[-1])
+		allresults.append(x)
+
+	return [allexperiments,allresults]
+
 def record_run(moduleInfo,result):
 	paramDict = {}
 	vistrail_name = moduleInfo['locator'].name
@@ -71,8 +95,6 @@ def record_run(moduleInfo,result):
 	            v = ', '.join([p.strValue for p in function.params])
 	            paramDict[function.name] = str(v)
 	            
-	            
-
 	paramDict['result'] = str(result)              
 	f.write(json.dumps(paramDict)+ '\n')
 	f.close()

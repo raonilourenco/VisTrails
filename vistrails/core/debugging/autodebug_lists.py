@@ -38,7 +38,7 @@ import random
 import copy
 import sys, os # os.system(command)
 import logging
-from utils import loadtests, evaluate, goodbad, numtests
+from utils import load_runs, evaluate, goodbad, numtests
 
 #logging.basicConfig(format='%(levelname)s:%(message)s', level=print)
 
@@ -181,25 +181,37 @@ class AutoDebug(object):
     num_initial_tests = 1
     for param in self.my_inputs:
       num_initial_tests *= len(input_dict[param])
-    for i in range(10):
-        exp = []
-        my_kwargs = {}
-        for param in self.my_inputs:
-            value = random.choice(input_dict[param])
-            exp.append(value)
-            my_kwargs[param] = value
-        try:
-          result = self.my_pipeline.execute(**my_kwargs)
-          for output in self.my_outputs:
-            exp.append(str(result.output_port(output)))
-        except:
-          exp.append(str(False))
-        self.allexperiments.append(exp)
+    print('here',str(pipeline.controller.vistrail.locator.name),str(self.my_inputs))
+    self.allexperiments,self.allresults = load_runs(pipeline.controller.vistrail.locator.name.replace(".vt",".adb"),self.my_inputs)
+    print("allresults is: "+str(self.allresults))
+    print('there')
+    if len(self.allexperiments) < (num_initial_tests/10):
 
-    for e in self.allexperiments:
+      for i in range(10):
+          exp = []
+          my_kwargs = {}
+          for param in self.my_inputs:
+              value = random.choice(input_dict[param])
+              exp.append(value)
+              my_kwargs[param] = value
+          try:
+            print("Executing",str(my_kwargs))
+            result = self.my_pipeline.execute(**my_kwargs)
+            print("Executed")
+            for output in self.my_outputs:
+              exp.append(str(result.output_port(output)))
+          except:
+            print("Error")
+            exp.append(str(False))
+          self.allexperiments.append(exp)
+          
+      for e in self.allexperiments:
         x = copy.deepcopy(e)
-        x[-1] = eval(e[-1])
+        x[-1] = eval(x[-1])
         self.allresults.append(x)
+    
+        
+        
 
 
     self.cols = self.my_inputs + self.my_outputs
