@@ -32,9 +32,11 @@ class Pipeline(object):
     _outputs = None
     _html = None
     controller = None
+    locator = None
 
     def __init__(self, controller=None, vistrail=None):
         self.controller = controller
+        self.locator = controller.locator
         pipeline = controller.current_pipeline
         if pipeline is None:
             self.pipeline = _Pipeline()
@@ -249,7 +251,7 @@ class Pipeline(object):
 
             interpreter = get_default_interpreter()
             self.controller.progress.setLabelText('Auto Debugging Executing \nParemeters: ' + str(kwargs))
-            result = interpreter.execute(pipeline,
+            result = interpreter.execute(pipeline,locator=self.locator,
                                          reason=reason,
                                          sinks=sinks,actions = actions)
 

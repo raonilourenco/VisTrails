@@ -187,7 +187,7 @@ class AutoDebug(object):
     print('there')
     if len(self.allexperiments) < (num_initial_tests/10):
 
-      for i in range(10):
+      for i in range(20):
           exp = []
           my_kwargs = {}
           for param in self.my_inputs:

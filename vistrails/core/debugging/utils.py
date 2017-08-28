@@ -80,7 +80,7 @@ def record_run(moduleInfo,result):
 	file_name = vistrail_name.replace('.vt','.adb')
 	f = open(file_name,"a")
 	reg = get_module_registry()
-	pipeline = moduleInfo['controller'].current_pipeline
+	pipeline = moduleInfo['pipeline']
 	sortedModules = sorted(pipeline.modules.iteritems(),
 	                       key=lambda item: item[1].name)
 	for mId, module in sortedModules:
