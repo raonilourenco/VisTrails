@@ -38,7 +38,7 @@ import random
 import copy
 import sys, os # os.system(command)
 import logging
-from utils import load_runs, evaluate, goodbad, numtests
+from utils import load_runs, evaluate, goodbad, numtests,load_combinatorial
 
 #logging.basicConfig(format='%(levelname)s:%(message)s', level=print)
 
@@ -181,17 +181,15 @@ class AutoDebug(object):
     num_initial_tests = 1
     for param in self.my_inputs:
       num_initial_tests *= len(input_dict[param])
-    print('here',str(pipeline.controller.vistrail.locator.name),str(self.my_inputs))
     self.allexperiments,self.allresults = load_runs(pipeline.controller.vistrail.locator.name.replace(".vt",".adb"),self.my_inputs)
     print("allresults is: "+str(self.allresults))
-    print('there')
     if len(self.allexperiments) < (num_initial_tests/10):
 
-      for i in range(10):
+      for d in load_combinatorial(input_dict):
           exp = []
           my_kwargs = {}
           for param in self.my_inputs:
-              value = random.choice(input_dict[param])
+              value = d[param]
               exp.append(value)
               my_kwargs[param] = value
           try:

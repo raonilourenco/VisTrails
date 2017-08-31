@@ -5,6 +5,7 @@ import logging
 from vistrails.core.vistrail.controller import VistrailController as BaseController
 from vistrails.core.modules.module_registry import get_module_registry
 import json
+from combinatorial_design import generate_tuples
 
 goodbad = [True, False]
 numtests = 10
@@ -73,6 +74,9 @@ def load_runs(filename, input_keys):
 		allresults.append(x)
 
 	return [allexperiments,allresults]
+
+def load_combinatorial(input_dict):
+	return generate_tuples(input_dict)
 
 def record_run(moduleInfo,result):
 	paramDict = {}
