@@ -194,6 +194,7 @@ class AutoDebug(object):
               my_kwargs[param] = value
           try:
             print("Executing",str(my_kwargs))
+            print("From dict",str(d))
             result = self.my_pipeline.execute(**my_kwargs)
             print("Executed")
             for output in self.my_outputs:

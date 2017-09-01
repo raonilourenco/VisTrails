@@ -80,13 +80,11 @@ def generate_tuples(parameters):
 					fit(v0,v1,pair,rows,keys)			
 			handled_pairs.append(pair)
 	parameters.pop('dummy', None)
-	print(str(parameters))
 	for row in rows:
 		row.pop('dummy', None)
 		for key in parameters.keys():
-			if not(row[key]):
+			if (row[key] == None):
 				row[key] = random.choice(parameters[key])
-	print(str(parameters))
 	return rows
 
 
